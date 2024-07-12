@@ -85,7 +85,7 @@ class HamsterKombatAccount:
 
   # Sending sync request
   def UpgradesForBuyRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/upgrades-for-buy"
+    url = "https://api.hamsterkombatgame.io/clicker/upgrades-for-buy"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -159,7 +159,7 @@ class HamsterKombatAccount:
 
   # Send HTTP requests
   def syncRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/sync"
+    url = "https://api.hamsterkombatgame.io/clicker/sync"
     headers = {
       "Access-Control-Request-Headers": self.Authorization,
       "Access-Control-Request-Method": "POST",
@@ -177,7 +177,7 @@ class HamsterKombatAccount:
 
   # Buy an upgrade
   def BuyUpgradeRequest(self, UpgradeId):
-    url = "https://api.hamsterkombat.io/clicker/buy-upgrade"
+    url = "https://api.hamsterkombatgame.io/clicker/buy-upgrade"
     headers = {
       "Access-Control-Request-Headers": "authorization,content-type",
       "Access-Control-Request-Method": "POST",
@@ -202,7 +202,7 @@ class HamsterKombatAccount:
 
   # Tap the hamster
   def TapRequest(self, tap_count):
-    url = "https://api.hamsterkombat.io/clicker/tap"
+    url = "https://api.hamsterkombatgame.io/clicker/tap"
     headers = {
       "Access-Control-Request-Headers": "authorization,content-type",
       "Access-Control-Request-Method": "POST",
@@ -228,7 +228,7 @@ class HamsterKombatAccount:
 
   # Get list of boosts to buy
   def BoostsToBuyListRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/boosts-for-buy"
+    url = "https://api.hamsterkombatgame.io/clicker/boosts-for-buy"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -246,7 +246,7 @@ class HamsterKombatAccount:
 
   # Buy a boost
   def BuyBoostRequest(self, boost_id):
-    url = "https://api.hamsterkombat.io/clicker/buy-boost"
+    url = "https://api.hamsterkombatgame.io/clicker/buy-boost"
     headers = {
       "Access-Control-Request-Headers": "authorization,content-type",
       "Access-Control-Request-Method": "POST",
@@ -336,7 +336,7 @@ class HamsterKombatAccount:
     return False
 
   def MeTelegramRequest(self):
-    url = "https://api.hamsterkombat.io/auth/me-telegram"
+    url = "https://api.hamsterkombatgame.io/auth/me-telegram"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -353,7 +353,7 @@ class HamsterKombatAccount:
     return self.HttpRequest(url, headers, "POST", 200)
 
   def ListTasksRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/list-tasks"
+    url = "https://api.hamsterkombatgame.io/clicker/list-tasks"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -370,7 +370,7 @@ class HamsterKombatAccount:
     return self.HttpRequest(url, headers, "POST", 200)
 
   def GetListAirDropTasksRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/list-airdrop-tasks"
+    url = "https://api.hamsterkombatgame.io/clicker/list-airdrop-tasks"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -387,7 +387,7 @@ class HamsterKombatAccount:
     return self.HttpRequest(url, headers, "POST", 200)
 
   def GetAccountConfigRequest(self):
-    url = "https://api.hamsterkombat.io/clicker/config"
+    url = "https://api.hamsterkombatgame.io/clicker/config"
     headers = {
       "Access-Control-Request-Headers": "authorization",
       "Access-Control-Request-Method": "POST",
@@ -404,7 +404,7 @@ class HamsterKombatAccount:
     return self.HttpRequest(url, headers, "POST", 200)
 
   def ClaimDailyCipherRequest(self, DailyCipher):
-    url = "https://api.hamsterkombat.io/clicker/claim-daily-cipher"
+    url = "https://api.hamsterkombatgame.io/clicker/claim-daily-cipher"
     headers = {
       "Access-Control-Request-Headers": "authorization,content-type",
       "Access-Control-Request-Method": "POST",
@@ -429,7 +429,7 @@ class HamsterKombatAccount:
     return self.HttpRequest(url, headers, "POST", 200, payload)
 
   def CheckTaskRequest(self, task_id):
-    url = "https://api.hamsterkombat.io/clicker/check-task"
+    url = "https://api.hamsterkombatgame.io/clicker/check-task"
     headers = {
       "Access-Control-Request-Headers": "authorization,content-type",
       "Access-Control-Request-Method": "POST",
@@ -764,7 +764,11 @@ class HamsterKombatAccount:
       log.warning(f"[{self.account_name}] Balance is too low to start buying upgrades.")
       return
 
-    while self.balanceCoins >= self.config["auto_upgrade_min"]:
+    # todo put counter in config
+    counter = 0
+    while self.balanceCoins >= self.config["auto_upgrade_min"] and counter < 10:
+      counter = counter + 1
+
       log.info(f"[{self.account_name}] Checking for upgrades...")
       time.sleep(2)
       upgradesResponse = self.UpgradesForBuyRequest()
@@ -848,8 +852,10 @@ class HamsterKombatAccount:
       "upgrades",
     )
 
+
 async def StartAccount(account):
   await account.Start()
+
 
 async def RunAccounts():
   accounts = [HamsterKombatAccount(account) for account in AccountList]
