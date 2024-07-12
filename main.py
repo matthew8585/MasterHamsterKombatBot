@@ -844,35 +844,36 @@ class HamsterKombatAccount:
       "upgrades",
     )
 
+async def StartAccount(account):
+  account.Start()
 
-def RunAccounts():
-  accounts = []
-  for account in AccountList:
-    accounts.append(HamsterKombatAccount(account))
-    accounts[-1].SendTelegramLog(
-      f"[{accounts[-1].account_name}] Hamster Kombat Auto farming bot started successfully.",
-      "general_info",
+async def RunAccounts():
+  accounts = [HamsterKombatAccount(account) for account in AccountList]
+
+  for account in accounts:
+    account.SendTelegramLog(
+      f"[{account.account_name}] Hamster Kombat Auto farming bot started successfully.",
+      "general_info"
     )
 
   while True:
     log.info("\033[1;33mStarting all accounts...\033[0m")
-    for account in accounts:
-      account.Start()
+
+    # Start all accounts asynchronously
+    await asyncio.gather(*[StartAccount(account) for account in accounts])
 
     if AccountsRecheckTime < 1 and MaxRandomDelay < 1:
-      log.error(
-        f"AccountsRecheckTime and MaxRandomDelay values are set to 0, bot will close now."
-      )
+      log.error("AccountsRecheckTime and MaxRandomDelay values are set to 0, bot will close now.")
       return
 
     if MaxRandomDelay > 0:
       randomDelay = random.randint(1, MaxRandomDelay)
       log.error(f"Sleeping for {randomDelay} seconds because of random delay...")
-      time.sleep(randomDelay)
+      await asyncio.sleep(randomDelay)
 
     if AccountsRecheckTime > 0:
       log.error(f"Rechecking all accounts in {AccountsRecheckTime} seconds...")
-      time.sleep(AccountsRecheckTime)
+      await asyncio.sleep(AccountsRecheckTime)
 
 
 def WelcomeMessage() -> None:
@@ -891,7 +892,6 @@ def main():
   WelcomeMessage()
   time.sleep(2)
   try:
-    # noinspection PyTypeChecker
     asyncio.run(RunAccounts())
   except KeyboardInterrupt:
     log.error("Stopping Master Hamster Kombat Auto farming bot...")
