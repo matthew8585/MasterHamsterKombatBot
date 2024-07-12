@@ -1,5 +1,5 @@
 services:
-  my_python_app:
+  app:
     build: .
     volumes:
       - .:/app
