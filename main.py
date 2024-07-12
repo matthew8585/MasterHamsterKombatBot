@@ -66,6 +66,7 @@ class HamsterKombatAccount:
     self.earnPassivePerHour = 0
     self.SpendTokens = 0
     self.account_data = None
+    self.last_auto_upgrade = 0
     self.telegram_chat_id = AccountData["telegram_chat_id"]
 
   def SendTelegramLog(self, message, level):
@@ -551,7 +552,7 @@ class HamsterKombatAccount:
 
     return True
 
-  def Start(self):
+  async def Start(self):
     self.StartAccount()
     AccountBasicData = self.getBasicAccountData()
     if not AccountBasicData:
@@ -751,6 +752,12 @@ class HamsterKombatAccount:
       log.error(f"[{self.account_name}] Auto upgrade is disabled.")
       return
 
+    now = int(time.time())
+    nextAutoUpgrade = self.last_auto_upgrade + self.config['auto_upgrade_interval']
+    if nextAutoUpgrade - now > 0:
+      log.warning(f"[{self.account_name}] {nextAutoUpgrade - now} seconds remain until the next upgrade.")
+      return
+
     self.ProfitPerHour = 0
     self.SpendTokens = 0
 
@@ -820,6 +827,8 @@ class HamsterKombatAccount:
       self.SpendTokens += selected_upgrades[0]["price"]
       self.earnPassivePerHour += selected_upgrades[0]["profitPerHourDelta"]
 
+    self.last_auto_upgrade = int(time.time())
+
     log.info(f"[{self.account_name}] Upgrades purchase completed successfully.")
     self.getAccountData()
     log.info(
@@ -845,7 +854,7 @@ class HamsterKombatAccount:
     )
 
 async def StartAccount(account):
-  account.Start()
+  await account.Start()
 
 async def RunAccounts():
   accounts = [HamsterKombatAccount(account) for account in AccountList]
@@ -888,14 +897,14 @@ def WelcomeMessage() -> None:
   log.info("------------------------------------------------------------------------")
 
 
-def main():
+async def main():
   WelcomeMessage()
-  time.sleep(2)
+  await asyncio.sleep(2)
   try:
-    asyncio.run(RunAccounts())
+    await RunAccounts()
   except KeyboardInterrupt:
     log.error("Stopping Master Hamster Kombat Auto farming bot...")
 
 
 if __name__ == "__main__":
-  main()
+  asyncio.run(main())
