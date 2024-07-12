@@ -1,8 +1,8 @@
 services:
   my_python_app:
     build: .
-    watch:
+    volumes:
       - .:/app
     restart: always
-    command: python mina.py
+    command: python main.py
 
