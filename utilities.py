@@ -2,8 +2,6 @@
 # Date: 2024
 # Github: https://github.com/masterking32
 import base64
-import requests
-
 
 # Sort upgrades by best profit per hour (profitPerHourDelta / price)
 # You can change this to sort by price, profitPerHourDelta, level, etc.
@@ -14,7 +12,7 @@ def SortUpgrades(upgrades, max_budget):
 
 
 # Convert number to string with k, m, b, t to make it more readable
-def number_to_string(num):
+def NumberToString(num):
     if num < 1000:
         return str(num)
     elif num < 1000000:
