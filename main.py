@@ -1,7 +1,9 @@
-# Developed by: MasterkinG32
-# Date: 2024
-# Github: https://github.com/masterking32
-
+import datetime
+import requests
+import json5
+import json
+import time
+import logging
 import asyncio
 import datetime
 import json
@@ -18,45 +20,26 @@ import sys
 from banner import show_banner
 import warna as w
 
-try:
-    from config import *
-except ImportError:
-    clear_screen()
-    print(
-        f"""
-    ==============================================================================
-                    \033[31;1mConfig file not found.
-    Create a copy of \033[34;1mconfig.py.example and rename it to \033[34;1mconfig.py
-    And fill in the required fields.
-    ==============================================================================
-          """
-    )
-    exit()
+# ---------------------------------------------#
+# Configuration Loading
+# ---------------------------------------------#
 
-if "ConfigFileVersion" not in locals() or ConfigFileVersion != 1:
-    clear_screen()
-    print(
-        f"""
-    ==============================================================================
-                  \033[31;1mInvalid config file version.
-    Please update the config file to the latest version.
-    Create a copy of \033[34;1mconfig.py.example and rename it to config.py
-    And fill in the required fields.
-    ==============================================================================
-    """
-    )
-    exit()
+# Load configuration from JSON file
+with open('config.jsonc', 'r') as config_file:
+    config = json5.load(config_file)
+
+# Extract the loaded configuration
+AccountsRecheckTime = config.get('AccountsRecheckTime', 300)
+MaxRandomDelay = config.get('MaxRandomDelay', 120)
+AccountList = config.get('AccountList', [])
+telegramBotLogging = config.get('telegramBotLogging')
 
 # ---------------------------------------------#
 # Logging configuration
 LOG_LEVEL = logging.DEBUG
-# Include date and time in the log format
-LOGFORMAT = f"{w.cb}[MasterHamsterKombatBot]{w.rs} {w.bt}[%(asctime)s]{w.bt} %(log_color)s[%(levelname)s]%(reset)s %(log_color)s%(message)s%(reset)s"
-
+LOG_FORMAT = "%(log_color)s[Master HamsterKombat Bot]%(reset)s[%(log_color)s%(levelname)s%(reset)s][%(log_color)s%(asctime)s%(reset)s]%(log_color)s%(message)s%(reset)s"
 logging.root.setLevel(LOG_LEVEL)
-formatter = ColoredFormatter(
-    LOGFORMAT, "%Y-%m-%d %H:%M:%S"
-)  # Specify the date/time format
+formatter = ColoredFormatter(LOG_FORMAT)
 stream = logging.StreamHandler()
 stream.setLevel(LOG_LEVEL)
 stream.setFormatter(formatter)
@@ -392,10 +375,9 @@ class HamsterKombatAccount:
         )
 
         BoostList = self.BoostsToBuyListRequest()
-        if BoostList is None:
-            log.error(
-                f"{w.rs}{w.g}[{self.account_name}]{w.rs}: ✖  Failed to get boosts list."
-            )
+        if not (isinstance(BoostList, dict) and "boostsForBuy" in BoostList):
+            log.error(f"[{self.account_name}] Failed to get boosts list.")
+            log.error(f"[{self.account_name}] BoostList value: {BoostList} (type: {type(BoostList)})")
             self.SendTelegramLog(
                 f"[{self.account_name}]: ✖  Failed to get boosts list.",
                 "other_errors",
@@ -967,10 +949,9 @@ class HamsterKombatAccount:
         log.info(f"{w.rs}{w.g}[{self.account_name}]{w.rs}: 🃏 Checking for best card.")
         time.sleep(2)
         upgradesResponse = self.UpgradesForBuyRequest()
-        if upgradesResponse is None:
-            log.error(
-                f"{w.rs}{w.g}[{self.account_name}]{w.rs}: ✖ Failed to get upgrades list."
-            )
+        if not (isinstance(upgradesResponse, dict) and "upgradesForBuy" in upgradesResponse):
+            log.error(f"[{self.account_name}] Failed to get upgrades list.")
+            log.error(f"[{self.account_name}] tasksResponse value: {upgradesResponse} (type: {type(upgradesResponse)})")
             self.SendTelegramLog(
                 f"[{self.account_name}]: ✖ Failed to get upgrades list.",
                 "other_errors",
@@ -1907,11 +1888,46 @@ class HamsterKombatAccount:
                 f"{w.rs}{w.g}[{self.account_name}]{w.rs}: └─ Morse code: {w.bb}{MorseCode}{w.rs}"
             )
 
-        # temporarily disabled
-        # if self.config["auto_finish_mini_game"]:
-        #     log.info(f"{w.rs}{w.g}[{self.account_name}]{w.rs}: Attempting to finish mini game.")
-        #     time.sleep(1)
-        #     self.StartMiniGame(AccountConfigData, AccountBasicData["accountInfo"]["id"])
+        log.info(f"[{self.account_name}] Getting account data...")
+        getAccountDataStatus = self.getAccountData()
+        if getAccountDataStatus is False:
+            return
+
+        log.info(
+            f"[{self.account_name}] Account Balance Coins: {number_to_string(self.balanceCoins)}, Available Taps: {self.availableTaps}, Max Taps: {self.maxTaps}"
+        )
+
+        log.info(f"[{self.account_name}] Getting account upgrades...")
+        upgradesResponse = self.UpgradesForBuyRequest()
+
+        if upgradesResponse is None:
+            log.error(f"[{self.account_name}] Failed to get upgrades list.")
+            self.SendTelegramLog(
+                f"[{self.account_name}] Failed to get upgrades list.", "other_errors"
+            )
+            return
+
+        log.info(f"[{self.account_name}] Getting account tasks...")
+        tasksResponse = self.ListTasksRequest()
+
+        if not (isinstance(tasksResponse, dict) and "tasks" in tasksResponse):
+            log.error(f"[{self.account_name}] Failed to get tasks list.")
+            log.error(f"[{self.account_name}] tasksResponse value: {tasksResponse} (type: {type(tasksResponse)})")
+            self.SendTelegramLog(
+                f"[{self.account_name}] Failed to get tasks list.", "other_errors"
+            )
+            return
+
+        log.info(f"[{self.account_name}] Getting account airdrop tasks...")
+        airdropTasksResponse = self.GetListAirDropTasksRequest()
+
+        if airdropTasksResponse is None:
+            log.error(f"[{self.account_name}] Failed to get airdrop tasks list.")
+            self.SendTelegramLog(
+                f"[{self.account_name}] Failed to get airdrop tasks list.",
+                "other_errors",
+            )
+            return
 
         # Start tapping
         if self.config["auto_tap"]:
@@ -1947,7 +1963,7 @@ class HamsterKombatAccount:
             )
 
         if self.config["auto_get_daily_cipher"] and DailyCipher != "":
-            if AccountConfigData["dailyCipher"]["isClaimed"] == True:
+            if AccountConfigData["dailyCipher"]["isClaimed"]:
                 log.info(
                     f"\033[1;34m{w.rs}{w.g}[{self.account_name}]{w.rs}: ✅ Daily cipher already claimed."
                 )
@@ -1986,7 +2002,7 @@ class HamsterKombatAccount:
                 )
                 return
 
-            if streak_days["isCompleted"] == True:
+            if streak_days["isCompleted"]:
                 log.info(
                     f"\033[1;34m{w.rs}{w.g}[{self.account_name}]{w.rs}: ✅ Daily task already completed."
                 )
@@ -2128,10 +2144,9 @@ class HamsterKombatAccount:
             )
             time.sleep(2)
             upgradesResponse = self.UpgradesForBuyRequest()
-            if upgradesResponse is None:
-                log.warning(
-                    f"{w.rs}{w.g}[{self.account_name}]{w.rs}: ✖ {w.r}Failed to get upgrades list."
-                )
+            if not (isinstance(upgradesResponse, dict) and "upgradesForBuy" in upgradesResponse):
+                log.error(f"[{self.account_name}] Failed to get upgrades list.")
+                log.error(f"[{self.account_name}] tasksResponse value: {upgradesResponse} (type: {type(upgradesResponse)})")
                 self.SendTelegramLog(
                     f"[{self.account_name}]: ✖ Failed to get upgrades list.",
                     "other_errors",
