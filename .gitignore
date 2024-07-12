@@ -1,5 +1,5 @@
 /venv
-/accounts_config.json
+/config.jsonc
 /.history
 /__pycache__
 /.vscode
