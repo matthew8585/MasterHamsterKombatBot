@@ -1,9 +1,6 @@
-# Developed by: MasterkinG32
-# Date: 2024
-# Github: https://github.com/masterking32
-
 import datetime
 import requests
+import json5
 import json
 import time
 import logging
@@ -18,89 +15,25 @@ from utilities import (
 )
 
 # ---------------------------------------------#
-# Configuration
+# Configuration Loading
 # ---------------------------------------------#
-# Recheck time in seconds to check all accounts again (60 seconds = 1 minute and 0 means no recheck)
-AccountsRecheckTime = 300
 
-# Adds a random delay to the AccountsRecheckTime interval to make it more unpredictable and less detectable.
-# Set it to 0 to disable the random delay.
-# For example, if set to 120, the bot will introduce a random delay between 1 and 120 seconds each time it rechecks.
-MaxRandomDelay = 120
+# Load configuration from JSON file
+with open('config.jsonc', 'r') as config_file:
+    config = json5.load(config_file)
 
-# Accounts will be checked in the order they are listed
-AccountList = [
-    {
-        "account_name": "Account 1",  # A custom name for the account (not important, just for logs)
-        "Authorization": "Bearer TOKEN_HERE",  # To get the token, refer to the README.md file
-        "UserAgent": "Your UserAgent",  # Refer to the README.md file to obtain a user agent
-        "Proxy": {},  # You can use proxies to avoid getting banned. Use {} for no proxy
-        # Example of using a proxy:
-        # "Proxy": {
-        #   "https": "https://10.10.1.10:3128",
-        #   "http": "http://user:pass@10.10.1.10:3128/"
-        # },
-        "config": {
-            "auto_tap": True,  # Enable auto tap by setting it to True, or set it to False to disable
-            "auto_free_tap_boost": True,  # Enable auto free tap boost by setting it to True, or set it to False to disable
-            "auto_get_daily_cipher": True,  # Enable auto get daily cipher by setting it to True, or set it to False to disable
-            "auto_get_daily_task": True,  # Enable auto get daily task by setting it to True, or set it to False to disable
-            "auto_upgrade": True,  # Enable auto upgrade by setting it to True, or set it to False to disable
-            "auto_upgrade_start": 2000000,  # Start buying upgrades when the balance is greater than this amount
-            "auto_upgrade_min": 100000,  # Stop buying upgrades when the balance is less than this amount
-            # This feature will ignore the auto_upgrade_start and auto_upgrade_min.
-            # By changing it to True, the bot will first find the overall best card and then wait for the best card to be available (based on cooldown or price).
-            # When the best card is available, the bot will buy it and then wait for the next best card to be available.
-            # This feature will stop buying upgrades when the balance is less than the price of the best card.
-            "wait_for_best_card": False,  # Recommended to keep it True for high level accounts
-            "auto_get_task": True,  # Enable auto get (Youtube/Twitter and ...) task to True, or set it to False to disable
-        },
-        # If you have enabled Telegram bot logging,
-        # you can add your chat ID below to receive logs in your Telegram account.
-        # You can obtain your chat ID by messaging @chatIDrobot.
-        # Example: "telegram_chat_id": "12345678".
-        # If you do not wish to use this feature for this account, leave it empty.
-        # This feature is optional and is required to enable the telegramBotLogging feature below.
-        "telegram_chat_id": "",  # String - you can get it from https://t.me/chatIDrobot
-    },
-    # Add more accounts if you want to use multiple accounts
-    # {
-    #     "account_name": "Account 2",
-    #     "Authorization": "Bearer Token_Here",
-    #     ...
-    #     other configurations like the first account
-    # },
-]
-
-# ---------------------------------------------#
-# Telegram Logging
-# By enabling this feature, you will receive logs in your Telegram account.
-# To use this feature, you need to create a bot and obtain the token from @BotFather.
-# Note: Only important logs are sent to Telegram, feel free to include more logs as needed.
-# You can also use this feature to receive logs from a bot running on a server.
-# If you don't want to use this feature, set "is_active" to False and leave "bot_token" and "uid" fields empty.
-# This feature is optional, and you can disable it by setting "is_active" to False.
-telegramBotLogging = {
-    "is_active": False,  # Set it to True if you want to use it, and make sure to fill out the below fields
-    "bot_token": "",  # HTTP API access token from https://t.me/BotFather ~ Start your bot after creating it
-    # Configure the what you want to receive logs from the bot
-    "messages": {
-        "general_info": True,  # General information
-        "account_info": True,  # Account information
-        "http_errors": False,  # HTTP errors
-        "other_errors": False,  # Other errors
-        "daily_cipher": True,  # Daily cipher
-        "daily_task": False,  # Daily task
-        "upgrades": True,  # Upgrades
-    },
-}
+# Extract the loaded configuration
+AccountsRecheckTime = config.get('AccountsRecheckTime', 300)
+MaxRandomDelay = config.get('MaxRandomDelay', 120)
+AccountList = config.get('AccountList', [])
+telegramBotLogging = config.get('telegramBotLogging')
 
 # ---------------------------------------------#
 # Logging configuration
 LOG_LEVEL = logging.DEBUG
-LOGFORMAT = "%(log_color)s[Master HamsterKombat Bot]%(reset)s[%(log_color)s%(levelname)s%(reset)s] %(log_color)s%(message)s%(reset)s"
+LOG_FORMAT = "%(log_color)s[Master HamsterKombat Bot]%(reset)s[%(log_color)s%(levelname)s%(reset)s][%(log_color)s%(asctime)s%(reset)s]%(log_color)s%(message)s%(reset)s"
 logging.root.setLevel(LOG_LEVEL)
-formatter = ColoredFormatter(LOGFORMAT)
+formatter = ColoredFormatter(LOG_FORMAT)
 stream = logging.StreamHandler()
 stream.setLevel(LOG_LEVEL)
 stream.setFormatter(formatter)
@@ -387,8 +320,9 @@ class HamsterKombatAccount:
         log.info(f"[{self.account_name}] Checking for free tap boost...")
 
         BoostList = self.BoostsToBuyListRequest()
-        if BoostList is None:
+        if not (isinstance(BoostList, dict) and "boostsForBuy" in BoostList):
             log.error(f"[{self.account_name}] Failed to get boosts list.")
+            log.error(f"[{self.account_name}] BoostList value: {BoostList} (type: {type(BoostList)})")
             self.SendTelegramLog(
                 f"[{self.account_name}] Failed to get boosts list.", "other_errors"
             )
@@ -539,8 +473,9 @@ class HamsterKombatAccount:
         log.info(f"[{self.account_name}] Checking for best card...")
         time.sleep(2)
         upgradesResponse = self.UpgradesForBuyRequest()
-        if upgradesResponse is None:
+        if not (isinstance(upgradesResponse, dict) and "upgradesForBuy" in upgradesResponse):
             log.error(f"[{self.account_name}] Failed to get upgrades list.")
+            log.error(f"[{self.account_name}] tasksResponse value: {upgradesResponse} (type: {type(upgradesResponse)})")
             self.SendTelegramLog(
                 f"[{self.account_name}] Failed to get upgrades list.", "other_errors"
             )
@@ -704,8 +639,9 @@ class HamsterKombatAccount:
         log.info(f"[{self.account_name}] Getting account tasks...")
         tasksResponse = self.ListTasksRequest()
 
-        if tasksResponse is None:
+        if not (isinstance(tasksResponse, dict) and "tasks" in tasksResponse):
             log.error(f"[{self.account_name}] Failed to get tasks list.")
+            log.error(f"[{self.account_name}] tasksResponse value: {tasksResponse} (type: {type(tasksResponse)})")
             self.SendTelegramLog(
                 f"[{self.account_name}] Failed to get tasks list.", "other_errors"
             )
@@ -730,7 +666,7 @@ class HamsterKombatAccount:
             log.info(f"[{self.account_name}] Tapping completed successfully.")
 
         if self.config["auto_get_daily_cipher"] and DailyCipher != "":
-            if AccountConfigData["dailyCipher"]["isClaimed"] == True:
+            if AccountConfigData["dailyCipher"]["isClaimed"]:
                 log.info(
                     f"\033[1;34m[{self.account_name}] Daily cipher already claimed.\033[0m"
                 )
@@ -756,7 +692,7 @@ class HamsterKombatAccount:
                 log.error(f"[{self.account_name}] Failed to get daily task.")
                 return
 
-            if streak_days["isCompleted"] == True:
+            if streak_days["isCompleted"]:
                 log.info(
                     f"\033[1;34m[{self.account_name}] Daily task already completed.\033[0m"
                 )
@@ -850,8 +786,9 @@ class HamsterKombatAccount:
             log.info(f"[{self.account_name}] Checking for upgrades...")
             time.sleep(2)
             upgradesResponse = self.UpgradesForBuyRequest()
-            if upgradesResponse is None:
-                log.warning(f"[{self.account_name}] Failed to get upgrades list.")
+            if not (isinstance(upgradesResponse, dict) and "upgradesForBuy" in upgradesResponse):
+                log.error(f"[{self.account_name}] Failed to get upgrades list.")
+                log.error(f"[{self.account_name}] tasksResponse value: {upgradesResponse} (type: {type(upgradesResponse)})")
                 self.SendTelegramLog(
                     f"[{self.account_name}] Failed to get upgrades list.",
                     "other_errors",

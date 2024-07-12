@@ -1,0 +1,6 @@
+/venv
+/accounts_config.json
+/.history
+/__pycache__
+/.vscode
+/.idea

@@ -1,0 +1,60 @@
+{
+  "AccountsRecheckTime": 300,
+  "MaxRandomDelay": 120,
+  // Telegram Logging
+  // By enabling this feature, you will receive logs in your Telegram account.
+  // To use this feature, you need to create a bot and obtain the token from @BotFather.
+  // Note: Only important logs are sent to Telegram, feel free to include more logs as needed.
+  // You can also use this feature to receive logs from a bot running on a server.
+  // If you don't want to use this feature, set "is_active" to False and leave "bot_token" and "uid" fields empty.
+  // This feature is optional, and you can disable it by setting "is_active" to False.
+  "telegramBotLogging": {
+    "is_active": false, // Set it to True if you want to use it, and make sure to fill out the below fields
+    "bot_token": "", // HTTP API access token from https://t.me/BotFather ~ Start your bot after creating it
+    // Configure what you want to receive logs from the bot
+    "messages": {
+      "general_info": true, // General information
+      "account_info": true, // Account information
+      "http_errors": false, // HTTP errors
+      "other_errors": false, // Other errors
+      "daily_cipher": true, // Daily cipher
+      "daily_task": false, // Daily task
+      "upgrades": true // Upgrades
+    }
+  },
+  "AccountList": [
+    {
+      "account_name": "Account 1", // A custom name for the account (not important, just for logs)
+      "Authorization": "Bearer TOKEN_HERE", // To get the token, refer to the README.md file
+      "UserAgent": "Your UserAgent", // Refer to the README.md file to obtain a user agent
+      "Proxy": {}, // You can use proxies to avoid getting banned. Use {} for no proxy
+      // Example of using a proxy:
+      // "Proxy": {
+      //   "https": "https://10.10.1.10:3128",
+      //   "http": "http://user:pass@10.10.1.10:3128/"
+      // },
+      "config": {
+        "auto_tap": true, // Enable auto tap by setting it to True, or set it to False to disable
+        "auto_free_tap_boost": true, // Enable auto free tap boost by setting it to True, or set it to False to disable
+        "auto_get_daily_cipher": true, // Enable auto get daily cipher by setting it to True, or set it to False to disable
+        "auto_get_daily_task": true, // Enable auto get daily task by setting it to True, or set it to False to disable
+        "auto_upgrade": true, // Enable auto upgrade by setting it to True, or set it to False to disable
+        "auto_upgrade_start": 2000000, // Start buying upgrades when the balance is greater than this amount
+        "auto_upgrade_min": 100000, // Stop buying upgrades when the balance is less than this amount
+        // This feature will ignore the auto_upgrade_start and auto_upgrade_min.
+        // By changing it to True, the bot will first find the overall best card and then wait for the best card to be available (based on cooldown or price).
+        // When the best card is available, the bot will buy it and then wait for the next best card to be available.
+        // This feature will stop buying upgrades when the balance is less than the price of the best card.
+        "wait_for_best_card": false, // Recommended to keep it True for high level accounts
+        "auto_get_task": true // Enable auto get (Youtube/Twitter and ...) task to True, or set it to False to disable
+      },
+      // If you have enabled Telegram bot logging,
+      // you can add your chat ID below to receive logs in your Telegram account.
+      // You can obtain your chat ID by messaging @chatIDrobot.
+      // Example: "telegram_chat_id": "12345678".
+      // If you do not wish to use this feature for this account, leave it empty.
+      // This feature is optional and is required to enable the telegramBotLogging feature below.
+      "telegram_chat_id": "" // String - you can get it from https://t.me/chatIDrobot
+    }
+  ]
+}
