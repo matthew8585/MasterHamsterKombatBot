@@ -39,7 +39,7 @@
         "auto_get_daily_cipher": true, // Enable auto get daily cipher by setting it to True, or set it to False to disable
         "auto_get_daily_task": true, // Enable auto get daily task by setting it to True, or set it to False to disable
         "auto_upgrade": true, // Enable auto upgrade by setting it to True, or set it to False to disable
-        "auto_upgrade_interval": 3600, // cache interval between each upgrade per second
+        "auto_upgrade_interval": 7200, // cache interval between each upgrade per second
         "auto_upgrade_start": 2000000, // Start buying upgrades when the balance is greater than this amount
         "auto_upgrade_min": 100000, // Stop buying upgrades when the balance is less than this amount
         // This feature will ignore the auto_upgrade_start and auto_upgrade_min.
